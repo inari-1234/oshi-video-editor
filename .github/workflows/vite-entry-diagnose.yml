@@ -1,0 +1,46 @@
+name: Vite Entry Diagnostics
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+jobs:
+  entry:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [styles, main, root_nopublic, root_minconfig]
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Prepare diagnostic
+        shell: bash
+        run: |
+          if [ "${{ matrix.target }}" = "styles" ]; then
+            mkdir -p .diag
+            echo '<!doctype html><html><body><script type="module" src="./main.ts"></script></body></html>' > .diag/index.html
+            echo "import '../src/styles.css'; console.log('styles-ok')" > .diag/main.ts
+          elif [ "${{ matrix.target }}" = "main" ]; then
+            mkdir -p .diag
+            echo '<!doctype html><html><body><div id="root"></div><script type="module" src="./main.ts"></script></body></html>' > .diag/index.html
+            echo "import '../src/main';" > .diag/main.ts
+          elif [ "${{ matrix.target }}" = "root_nopublic" ]; then
+            echo "export default { base: '/oshi-video-editor/', publicDir: false, build: { target: 'es2022', sourcemap: false, minify: false } }" > .diag-config.mjs
+          else
+            echo "export default { build: { minify: false, sourcemap: false } }" > .diag-config.mjs
+          fi
+      - name: Build diagnostic target
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          if [ "${{ matrix.target }}" = "styles" ] || [ "${{ matrix.target }}" = "main" ]; then
+            npx vite build .diag --outDir ../.diag-dist --emptyOutDir --debug
+          else
+            npx vite build --config .diag-config.mjs --debug
+          fi
