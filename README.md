@@ -73,4 +73,4 @@ npm run build
 - 想定公開URL: `https://inari-1234.github.io/oshi-video-editor/`
 - GitHub側では Settings → Pages → Source を `GitHub Actions` に設定してください。
 
-GitHubリポジトリ作成前でもコードのauthorityはこのパッケージで保持できますが、工程1の正式PASSにはPages公開後のiPhone実機Gateが必要です。
+正式リポジトリは `inari-1234/oshi-video-editor` に作成済みです。工程1の正式PASSにはPages公開後のiPhone実機Gateが必要です。
