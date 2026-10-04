@@ -1,0 +1,38 @@
+name: React Bundle Diagnostics
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+jobs:
+  bundle:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [react_only, reactdom_client, reactdom_legacy, app_css]
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Prepare
+        shell: bash
+        run: |
+          mkdir -p .diag
+          echo '<!doctype html><html><body><div id="root"></div><script type="module" src="./main.ts"></script></body></html>' > .diag/index.html
+          if [ "${{ matrix.target }}" = "react_only" ]; then
+            echo "import { useState } from 'react'; console.log(useState)" > .diag/main.ts
+          elif [ "${{ matrix.target }}" = "reactdom_client" ]; then
+            echo "import { createRoot } from 'react-dom/client'; console.log(createRoot)" > .diag/main.ts
+          elif [ "${{ matrix.target }}" = "reactdom_legacy" ]; then
+            echo "import * as ReactDOM from 'react-dom'; console.log(ReactDOM)" > .diag/main.ts
+          else
+            echo "import App from '../src/App'; import '../src/styles.css'; console.log(App)" > .diag/main.ts
+          fi
+      - name: Build
+        timeout-minutes: 1
+        run: npx vite build .diag --outDir ../.diag-dist --emptyOutDir --debug
