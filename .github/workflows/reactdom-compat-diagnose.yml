@@ -37,7 +37,7 @@ jobs:
             esbuild_0_25_5) npm install --no-save esbuild@0.25.5 ;;
           esac
       - name: Versions
-        run: npm ls react react-dom vite rollup esbuild
+        run: npm ls react react-dom vite rollup esbuild || true
       - name: Prepare react-dom client entry
         run: |
           mkdir -p .diag
