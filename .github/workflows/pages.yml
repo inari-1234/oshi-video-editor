@@ -37,14 +37,11 @@ jobs:
         run: npx tsc --noEmit -p tsconfig.app.json
       - name: Minimal Vite smoke build
         timeout-minutes: 1
-        shell: bash
         run: |
           rm -rf .vite-diag .vite-diag-dist
           mkdir -p .vite-diag
-          printf '%s
-' '<!doctype html><html><body><script type="module" src="./main.ts"></script></body></html>' > .vite-diag/index.html
-          printf '%s
-' 'console.log("vite-smoke-ok")' > .vite-diag/main.ts
+          echo '<!doctype html><html><body><script type="module" src="./main.ts"></script></body></html>' > .vite-diag/index.html
+          echo 'console.log("vite-smoke-ok")' > .vite-diag/main.ts
           npx vite build .vite-diag --outDir ../.vite-diag-dist --emptyOutDir
       - name: Vite build
         timeout-minutes: 2
