@@ -1,0 +1,39 @@
+name: Vite Module Diagnostics
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+jobs:
+  isolate:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [vanilla, react, core, storage, export, preview, testdata, app]
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Generate diagnostic entry
+        shell: bash
+        run: |
+          mkdir -p .diag
+          echo '<!doctype html><html><body><script type="module" src="./main.ts"></script></body></html>' > .diag/index.html
+          case "${{ matrix.target }}" in
+            vanilla) echo 'console.log("vanilla")' > .diag/main.ts ;;
+            react) echo "import React from 'react'; import ReactDOM from 'react-dom/client'; console.log(React,ReactDOM)" > .diag/main.ts ;;
+            core) echo "import * as m from '../src/core/project/timeline'; console.log(m)" > .diag/main.ts ;;
+            storage) echo "import * as m from '../src/adapters/storage/IndexedDbStorage'; console.log(m)" > .diag/main.ts ;;
+            export) echo "import * as m from '../src/adapters/export/MediaRecorderExportRenderer'; console.log(m)" > .diag/main.ts ;;
+            preview) echo "import * as m from '../src/rendering/CanvasPreviewRenderer'; console.log(m)" > .diag/main.ts ;;
+            testdata) echo "import * as m from '../src/testdata/generateTestMedia'; console.log(m)" > .diag/main.ts ;;
+            app) echo "import App from '../src/App'; console.log(App)" > .diag/main.ts ;;
+          esac
+      - name: Build diagnostic target
+        timeout-minutes: 1
+        run: npx vite build .diag --outDir ../.diag-dist --emptyOutDir --debug
