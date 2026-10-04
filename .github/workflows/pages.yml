@@ -30,8 +30,12 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Test
         run: npm test
-      - name: Build
-        run: npm run build
+      - name: Typecheck
+        timeout-minutes: 2
+        run: npx tsc --noEmit -p tsconfig.app.json
+      - name: Vite build
+        timeout-minutes: 2
+        run: npx vite build
       - name: Configure Pages
         if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v6
