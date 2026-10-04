@@ -1,0 +1,48 @@
+name: ReactDOM Compatibility Diagnostics
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+jobs:
+  compat:
+    strategy:
+      fail-fast: false
+      matrix:
+        case:
+          - baseline
+          - react_19_1_1
+          - react_18_3_1
+          - vite_7_3_6
+          - rollup_4_43_0
+          - esbuild_0_25_5
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Override one dependency axis
+        shell: bash
+        run: |
+          case "${{ matrix.case }}" in
+            baseline) true ;;
+            react_19_1_1) npm install --no-save react@19.1.1 react-dom@19.1.1 ;;
+            react_18_3_1) npm install --no-save react@18.3.1 react-dom@18.3.1 ;;
+            vite_7_3_6) npm install --no-save vite@7.3.6 ;;
+            rollup_4_43_0) npm install --no-save rollup@4.43.0 ;;
+            esbuild_0_25_5) npm install --no-save esbuild@0.25.5 ;;
+          esac
+      - name: Versions
+        run: npm ls react react-dom vite rollup esbuild
+      - name: Prepare react-dom client entry
+        run: |
+          mkdir -p .diag
+          echo '<!doctype html><html><body><div id="root"></div><script type="module" src="./main.ts"></script></body></html>' > .diag/index.html
+          echo "import { createRoot } from 'react-dom/client'; console.log(createRoot)" > .diag/main.ts
+      - name: Build
+        timeout-minutes: 1
+        run: npx vite build .diag --outDir ../.diag-dist --emptyOutDir --debug
